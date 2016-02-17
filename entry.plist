@@ -1,0 +1,10 @@
+{
+	entry = {
+		bundle = "BadgeCleanerSettings";
+		cell = PSLinkCell;
+		detail = "BDCPreferenceController";
+		icon = "BadgeCleaner.png";
+		isController = 1;
+		label = "BadgeCleaner";
+	};
+}
