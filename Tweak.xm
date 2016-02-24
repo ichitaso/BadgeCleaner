@@ -10,6 +10,7 @@
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
+#import <firmware.h>
 
 #define PREF_PATH @"/var/mobile/Library/Preferences/com.ichitaso.badgecleaner.plist"
 
@@ -82,7 +83,10 @@ static UIAlertController *sheet = nil;
             
             badgeValue = [badgeStr intValue];
             
-            if (isEnabled && badgeValue > 0 && !openApp) {
+            BOOL hideApp = [[dict objectForKey:idStr] boolValue];
+            NSString *hideStr = hideApp ? idStr : nil;
+            
+            if (isEnabled && badgeValue > 0 && !openApp && ![idStr isEqualToString:hideStr]) {
                 sheet = [UIAlertController alertControllerWithTitle:@"BadgeCleaner"
                                                             message:nil
                                                      preferredStyle:UIAlertControllerStyleActionSheet];
@@ -115,6 +119,15 @@ static UIAlertController *sheet = nil;
                 
                 window.rootViewController = vc;
                 [window makeKeyAndVisible];
+                
+                if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber_iOS_9_0 &&
+                    UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+                    
+                    sheet.popoverPresentationController.sourceView = vc.view;
+                    sheet.popoverPresentationController.sourceRect = vc.view.bounds;
+                    // Do not show the balloon of the arrow
+                    sheet.popoverPresentationController.permittedArrowDirections = 0;
+                }
                 
                 [vc presentViewController:sheet animated:YES completion:nil];
             } else {
@@ -158,6 +171,36 @@ static UIAlertController *sheet = nil;
     
     [window release];
     window = nil;
+}
+%end
+
+%hook SBIconBadgeView
+- (void)configureForIcon:(id)arg1 location:(int)arg2 highlighted:(BOOL)arg3
+{
+    NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
+    
+    NSMutableArray *array = [@[arg1] mutableCopy];
+    
+    NSString *str = [array componentsJoinedByString:@";"];
+    
+    if ([str respondsToSelector:@selector(rangeOfString:)]) {
+        NSRange found = [str rangeOfString:@"\">"];
+        if (found.location != NSNotFound) {
+            idStr = [str substringFromIndex:found.location + 3];
+            
+            BOOL hideApp = [[dict objectForKey:idStr] boolValue];
+            NSString *hideStr = hideApp ? idStr : nil;
+            
+            if ([idStr isEqualToString:hideStr]) {
+                %orig(nil,arg2,arg3);
+                [[[[%c(SBIconViewMap) homescreenMap] iconModel] applicationIconForBundleIdentifier:idStr] setBadge:nil];
+            } else {
+                %orig;
+            }
+        }
+    } else {
+        %orig;
+    }
 }
 %end
 

@@ -1,14 +1,15 @@
-Author: ichitaso
-Maintainer: ichitaso
+Author: ichitaso <willfeeltips+bcp@gmail.com>
+Maintainer: BigBoss <bigboss@thebigboss.org>
 Package: com.ichitaso.badgecleaner
 Name: BadgeCleaner
 Depends: firmware (>= 8.0), mobilesubstrate, preferenceloader
 Section: Tweaks
-Version: 0.1-1
+Version: 1.0-1
 Architecture: iphoneos-arm
 Description: When you launch the app, display the menu to clear the badge.
-Depiction: 
-Homepage: 
+Depiction: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=badgecleanerDp
+Homepage: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=badgecleanerDp
+Sponsor: thebigboss.org <http://thebigboss.org>
 dev: ichitaso
 Tag: purpose::extension, compatible::ios8, compatible::ios9
 Icon: file:///Library/PreferenceBundles/BadgeCleanerSettings.bundle/BadgeCleaner@2x.png
