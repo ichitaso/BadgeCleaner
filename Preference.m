@@ -15,6 +15,7 @@
 @interface BDCPreferenceController : PSListController <UIActionSheetDelegate>
 - (NSArray *)specifiers;
 - (void)reloadPrefs:(NSNotification *)notification;
+- (void)addRespringButton:(NSNotification *)notification;
 @end
 
 @implementation BDCPreferenceController
@@ -22,7 +23,7 @@
 {
     self = [super init];
     
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:@"reloadPrefs" object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
     
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
                                     NULL,
@@ -40,6 +41,16 @@
     
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(reloadPrefs:) name:@"reloadPrefs" object:nil];
     
+    // Call Respring Alert
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
+                                    NULL,
+                                    (CFNotificationCallback)addRespringButtonCallBack,
+                                    CFSTR("com.ichitaso.badgecleaner-respring"),
+                                    NULL,
+                                    CFNotificationSuspensionBehaviorDeliverImmediately);
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(addRespringButton:) name:@"AddRespringButton" object:nil];
+    
     return self;
 }
 
@@ -50,6 +61,32 @@ void reloadPrefsCallBack() {
 - (void)reloadPrefs:(NSNotification *)notification
 {
     [self reloadSpecifiers];
+}
+
+void addRespringButtonCallBack () {
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"AddRespringButton" object:nil];
+}
+
+- (void)addRespringButton:(NSNotification *)notification
+{
+    UIAlertView *alert =
+    [[UIAlertView alloc] initWithTitle:@"Respring Required"
+                               message:nil
+                              delegate:self
+                     cancelButtonTitle:@"Later"
+                     otherButtonTitles:@"Respring",nil];
+    [alert show];
+}
+
+- (void)respring {
+    system("/usr/bin/killall SpringBoard");
+}
+
+- (void)alertView:(UIAlertView*)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
+{
+    if (buttonIndex == 1) {
+        [self respring];
+    }
 }
 
 - (NSArray *)specifiers

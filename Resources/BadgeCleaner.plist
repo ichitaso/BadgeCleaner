@@ -26,6 +26,44 @@
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>footerText</key>
+			<string>Run by the icon swipe</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.ichitaso.badgecleaner</string>
+			<key>key</key>
+			<string>swipeMenu</string>
+			<key>label</key>
+			<string>Icon Swipe</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>footerText</key>
+			<string>In the case of iOS 9, the spotlight of the home screen left is valid.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<false/>
+			<key>defaults</key>
+			<string>com.ichitaso.badgecleaner</string>
+			<key>key</key>
+			<string>disableSpot</string>
+			<key>label</key>
+			<string>Disable SpotLight</string>
+			<key>PostNotification</key>
+			<string>com.ichitaso.badgecleaner-respring</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>footerText</key>
 			<string>It hides the badge of the selected application.</string>
 		</dict>
 		<dict>

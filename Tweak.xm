@@ -42,25 +42,38 @@
 @interface SBIconController
 + (id)sharedInstance;
 - (void)_launchIcon:(id)arg1;
+- (void)clearHighlightedIcon;
 - (void)clearBadges;
 - (void)openApps;
 @end
 
 static NSString *idStr = @"";
-static id launchApp;
+static id identifier;
 static int badgeValue;
 static BOOL openApp;
 static BOOL isEnabled;
+static BOOL swipeMenu;
+static BOOL disableSpot;
 
 static UIWindow * window = nil;
 static UIAlertController *sheet = nil;
 
 %hook SBIconController
-- (void)_launchIcon:(id)arg1
+- (void)setLastTouchedIcon:(id)arg1
 {
-    launchApp = arg1;
+    identifier = arg1;
+    %orig;
+}
+
+- (void)icon:(id)arg1 touchMoved:(id)arg2
+{
+    %orig;
     
-    NSMutableArray *array = [@[arg1] mutableCopy];
+    BOOL iconTool = [[NSFileManager defaultManager] fileExistsAtPath:@"/Library/MobileSubstrate/DynamicLibraries/IconTool.dylib"];
+    
+    if (iconTool) return;
+    
+    NSMutableArray *array = [@[identifier] mutableCopy];
     
     NSString *str = [array componentsJoinedByString:@";"];
     
@@ -77,6 +90,7 @@ static UIAlertController *sheet = nil;
             [mutableDict writeToFile:PREF_PATH atomically:YES];
             
             isEnabled = [dict objectForKey:@"enabled"] ? [[dict objectForKey:@"enabled"] boolValue] : YES;
+            swipeMenu = [dict objectForKey:@"swipeMenu"] ? [[dict objectForKey:@"swipeMenu"] boolValue] : YES;
             openApp = [dict objectForKey:@"openApp"] ? [[dict objectForKey:@"openApp"] boolValue] : NO;
             
             NSString *badgeStr = [[[[%c(SBIconViewMap) homescreenMap] iconModel] applicationIconForBundleIdentifier:idStr] badgeNumberOrString];
@@ -86,7 +100,7 @@ static UIAlertController *sheet = nil;
             BOOL hideApp = [[dict objectForKey:idStr] boolValue];
             NSString *hideStr = hideApp ? idStr : nil;
             
-            if (isEnabled && badgeValue > 0 && !openApp && ![idStr isEqualToString:hideStr]) {
+            if (isEnabled && swipeMenu && badgeValue > 0 && !openApp && ![idStr isEqualToString:hideStr]) {
                 sheet = [UIAlertController alertControllerWithTitle:@"BadgeCleaner"
                                                             message:nil
                                                      preferredStyle:UIAlertControllerStyleActionSheet];
@@ -131,6 +145,89 @@ static UIAlertController *sheet = nil;
                 
                 [vc presentViewController:sheet animated:YES completion:nil];
             } else {
+                [mutableDict setValue:@NO forKey:@"openApp"];
+                [mutableDict writeToFile:PREF_PATH atomically:YES];
+            }
+        }
+    }
+}
+
+- (void)_launchIcon:(id)arg1
+{
+    NSMutableArray *array = [@[arg1] mutableCopy];
+    
+    NSString *str = [array componentsJoinedByString:@";"];
+    
+    if ([str respondsToSelector:@selector(rangeOfString:)]) {
+        NSRange found = [str rangeOfString:@"\">"];
+        if (found.location != NSNotFound) {
+            idStr = [str substringFromIndex:found.location + 3];
+            
+            NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
+            
+            NSMutableDictionary *mutableDict = dict ? [[dict mutableCopy] autorelease] : [NSMutableDictionary dictionary];
+            
+            [mutableDict setValue:idStr forKey:@"idStr"];
+            [mutableDict writeToFile:PREF_PATH atomically:YES];
+            
+            isEnabled = [dict objectForKey:@"enabled"] ? [[dict objectForKey:@"enabled"] boolValue] : YES;
+            swipeMenu = [dict objectForKey:@"swipeMenu"] ? [[dict objectForKey:@"swipeMenu"] boolValue] : YES;
+            openApp = [dict objectForKey:@"openApp"] ? [[dict objectForKey:@"openApp"] boolValue] : NO;
+            
+            NSString *badgeStr = [[[[%c(SBIconViewMap) homescreenMap] iconModel] applicationIconForBundleIdentifier:idStr] badgeNumberOrString];
+            
+            badgeValue = [badgeStr intValue];
+            
+            BOOL hideApp = [[dict objectForKey:idStr] boolValue];
+            NSString *hideStr = hideApp ? idStr : nil;
+            
+            if (isEnabled && !swipeMenu && badgeValue > 0 && !openApp && ![idStr isEqualToString:hideStr]) {
+                sheet = [UIAlertController alertControllerWithTitle:@"BadgeCleaner"
+                                                            message:nil
+                                                     preferredStyle:UIAlertControllerStyleActionSheet];
+                
+                [sheet addAction:[UIAlertAction actionWithTitle:@"Clear Badges" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+                    [self clearBadges];
+                }]];
+                
+                [sheet addAction:[UIAlertAction actionWithTitle:@"Open App" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+                    [self openApps];
+                }]];
+                
+                [sheet addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction *action) {
+                    [window release];
+                    window = nil;
+                }]];
+                
+                CGRect screenSize = [[UIScreen mainScreen] bounds];
+                
+                window = [[UIWindow alloc] initWithFrame:screenSize];
+                window.windowLevel = 666666;
+                
+                UIView *uv = [[UIView alloc] initWithFrame:screenSize];
+                
+                [window addSubview:uv];
+                
+                UIViewController *vc = [[UIViewController alloc] init];
+                
+                vc.view.frame = [UIScreen mainScreen].applicationFrame;
+                
+                window.rootViewController = vc;
+                [window makeKeyAndVisible];
+                
+                if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber_iOS_9_0 &&
+                    UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+                    
+                    sheet.popoverPresentationController.sourceView = vc.view;
+                    sheet.popoverPresentationController.sourceRect = vc.view.bounds;
+                    // Do not show the balloon of the arrow
+                    sheet.popoverPresentationController.permittedArrowDirections = 0;
+                }
+                
+                [vc presentViewController:sheet animated:YES completion:nil];
+                
+                [self clearHighlightedIcon];
+            } else {
                 %orig;
                 
                 [mutableDict setValue:@NO forKey:@"openApp"];
@@ -167,7 +264,7 @@ static UIAlertController *sheet = nil;
     [mutableDict setValue:@YES forKey:@"openApp"];
     [mutableDict writeToFile:PREF_PATH atomically:YES];
     
-    [[%c(SBIconController) sharedInstance] _launchIcon:launchApp];
+    [[%c(SBIconController) sharedInstance] _launchIcon:identifier];
     
     [window release];
     window = nil;
@@ -204,20 +301,77 @@ static UIAlertController *sheet = nil;
 }
 %end
 
-%hook SBIconView
-- (void)setHighlighted:(BOOL)arg1
+// Disable Home Screen SpotLight
+%group iOS9
+%hook SBSpotlightSettings
+- (BOOL)enableSpotlightHomeScreenGesture
 {
     NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
     
     isEnabled = [dict objectForKey:@"enabled"] ? [[dict objectForKey:@"enabled"] boolValue] : YES;
+    swipeMenu = [dict objectForKey:@"swipeMenu"] ? [[dict objectForKey:@"swipeMenu"] boolValue] : YES;
+    disableSpot = [dict objectForKey:@"disableSpot"] ? [[dict objectForKey:@"disableSpot"] boolValue] : NO;
     
-    if (isEnabled) {
-        %orig(NO);
+    if ((isEnabled && swipeMenu && badgeValue > 0) || disableSpot) {
+        return NO;
     } else {
-        %orig();
+        return %orig;
     }
 }
 %end
+%end
+
+@interface SBSearchScrollView : UIScrollView
+@end
+
+@interface SBSearchGesture
+@property (assign,nonatomic) BOOL enabled;
+- (void)scrollViewEnabled:(BOOL)enabled;
+@end
+
+%group iOS8
+%hook SBSearchGesture
+%new
+- (void)scrollViewEnabled:(BOOL)enabled
+{
+    [MSHookIvar<SBSearchScrollView *>(self, "_scrollView") setScrollEnabled:enabled];
+}
+
+- (void)_updateScrollingEnabled
+{
+    %orig;
+    
+    if ([[%c(SBIconController) sharedInstance] isEditing]) return;
+    
+    NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
+    
+    isEnabled = [dict objectForKey:@"enabled"] ? [[dict objectForKey:@"enabled"] boolValue] : YES;
+    swipeMenu = [dict objectForKey:@"swipeMenu"] ? [[dict objectForKey:@"swipeMenu"] boolValue] : YES;
+    disableSpot = [dict objectForKey:@"disableSpot"] ? [[dict objectForKey:@"disableSpot"] boolValue] : NO;
+    
+    if ((isEnabled && swipeMenu && badgeValue > 0) || disableSpot) {
+        [self scrollViewEnabled:NO];
+    }
+}
+%end
+%end
+
+// No More Shadow
+//%hook SBIconView
+//- (void)setHighlighted:(BOOL)arg1
+//{
+//    NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
+//    
+//    isEnabled = [dict objectForKey:@"enabled"] ? [[dict objectForKey:@"enabled"] boolValue] : YES;
+//    
+//    if (isEnabled) {
+//        %orig(NO);
+//    } else {
+//        %orig();
+//    }
+//}
+//%end
+
 
 // Called by the flipswitch toggle
 //==============================================================================
@@ -258,5 +412,11 @@ void switchToggleOff() {
                                         CFNotificationSuspensionBehaviorDeliverImmediately);
         
         %init;
+        
+        if (kCFCoreFoundationVersionNumber >= kCFCoreFoundationVersionNumber_iOS_9_0) {
+            %init(iOS9);
+        } else {
+            %init(iOS8);
+        }
     }
 }
