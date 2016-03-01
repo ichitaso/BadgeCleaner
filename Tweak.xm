@@ -1,7 +1,7 @@
 /**
  * Name: BadgeCleaner
  * Type: iOS SpringBoard extension (MobileSubstrate-based)
- * Desc: Rotate the device screen with gestures
+ * Desc: When you launch the app, display the menu to clear the badge.
  *
  * Author: ichitaso
  * License: Apache v2 License (See LICENSE file for details)
@@ -65,6 +65,8 @@ static UIAlertController *sheet = nil;
     %orig;
 }
 
+// Swipe Icon Mode
+//==============================================================================
 - (void)icon:(id)arg1 touchMoved:(id)arg2
 {
     %orig;
@@ -72,6 +74,9 @@ static UIAlertController *sheet = nil;
     BOOL iconTool = [[NSFileManager defaultManager] fileExistsAtPath:@"/Library/MobileSubstrate/DynamicLibraries/IconTool.dylib"];
     
     if (iconTool) return;
+    
+    // Disable Edting Mode
+    if ([[%c(SBIconController) sharedInstance] isEditing]) return;
     
     NSMutableArray *array = [@[identifier] mutableCopy];
     
@@ -152,6 +157,8 @@ static UIAlertController *sheet = nil;
     }
 }
 
+// Launch Icon Mode
+//==============================================================================
 - (void)_launchIcon:(id)arg1
 {
     NSMutableArray *array = [@[arg1] mutableCopy];
@@ -230,6 +237,9 @@ static UIAlertController *sheet = nil;
             } else {
                 %orig;
                 
+                [window release];
+                window = nil;
+                
                 [mutableDict setValue:@NO forKey:@"openApp"];
                 [mutableDict writeToFile:PREF_PATH atomically:YES];
             }
@@ -302,6 +312,7 @@ static UIAlertController *sheet = nil;
 %end
 
 // Disable Home Screen SpotLight
+//==============================================================================
 %group iOS9
 %hook SBSpotlightSettings
 - (BOOL)enableSpotlightHomeScreenGesture
@@ -357,6 +368,7 @@ static UIAlertController *sheet = nil;
 %end
 
 // No More Shadow
+//==============================================================================
 //%hook SBIconView
 //- (void)setHighlighted:(BOOL)arg1
 //{

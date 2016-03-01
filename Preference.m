@@ -1,7 +1,7 @@
 /**
  * Name: BadgeCleaner
  * Type: iOS SpringBoard extension (MobileSubstrate-based)
- * Desc: Rotate the device screen with gestures
+ * Desc: When you launch the app, display the menu to clear the badge.
  *
  * Author: ichitaso
  * License: Apache v2 License (See LICENSE file for details)
@@ -99,7 +99,7 @@ void addRespringButtonCallBack () {
 
 - (void)openTwitter:(id)specifier
 {
-	NSMutableArray *items = [NSMutableArray array];
+    NSMutableArray *items = [NSMutableArray array];
     
     if ([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"tweetbot://"]]) {
         [items addObject:@"Open in Tweetbot"];
@@ -135,7 +135,7 @@ void addRespringButtonCallBack () {
 
 - (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex
 {
-	NSString *option = [actionSheet buttonTitleAtIndex:buttonIndex];
+    NSString *option = [actionSheet buttonTitleAtIndex:buttonIndex];
     
     if ([option isEqualToString:@"Open in Tweetbot"]) {
         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"tweetbot:///user_profile/ichitaso"]];

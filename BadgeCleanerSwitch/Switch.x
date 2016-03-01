@@ -1,7 +1,7 @@
 /**
  * Name: BadgeCleaner
  * Type: iOS SpringBoard extension (MobileSubstrate-based)
- * Desc: Rotate the device screen with gestures
+ * Desc: When you launch the app, display the menu to clear the badge.
  *
  * Author: ichitaso
  * License: Apache v2 License (See LICENSE file for details)
@@ -21,7 +21,7 @@
 
 - (FSSwitchState)stateForSwitchIdentifier:(NSString *)switchIdentifier
 {
-	NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
+    NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
     
     id enable = [dict objectForKey:kPrefKey];
     BOOL isEnabled = enable ? [enable boolValue] : YES;
@@ -31,7 +31,7 @@
 
 - (void)applyState:(FSSwitchState)newState forSwitchIdentifier:(NSString *)switchIdentifier
 {
-	NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
+    NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
     
     NSMutableDictionary *mutableDict = dict ? [[dict mutableCopy] autorelease] : [NSMutableDictionary dictionary];
     
@@ -103,3 +103,20 @@
 }
 
 @end
+
+void reloadPrefsCallBack() {
+    // Update Flipswitch state
+    [[FSSwitchPanel sharedPanel] applyActionForSwitchIdentifier:@"com.ichitaso.badgecleanerfs"];
+}
+
+%ctor
+{
+    @autoreleasepool {
+        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
+                                        NULL,
+                                        (CFNotificationCallback)reloadPrefsCallBack,
+                                        CFSTR("com.ichitaso.badgecleaner-prefs"),
+                                        NULL,
+                                        CFNotificationSuspensionBehaviorDeliverImmediately);
+    }
+}
