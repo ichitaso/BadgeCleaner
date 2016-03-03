@@ -47,6 +47,10 @@
 - (void)openApps;
 @end
 
+@interface SBFolderIcon
+- (void)_updateBadgeValue;
+@end
+
 static NSString *idStr = @"";
 static id identifier;
 static int badgeValue;
@@ -301,6 +305,8 @@ static UIAlertController *sheet = nil;
             if ([idStr isEqualToString:hideStr]) {
                 %orig(nil,arg2,arg3);
                 [[[[%c(SBIconViewMap) homescreenMap] iconModel] applicationIconForBundleIdentifier:idStr] setBadge:nil];
+                
+                [[%c(SBFolderIcon) alloc] _updateBadgeValue];
             } else {
                 %orig;
             }
