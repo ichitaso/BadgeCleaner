@@ -48,6 +48,7 @@
 - (void)clearBadges;
 - (void)openApps;
 - (SBIconViewMap *)homescreenIconViewMap; // iOS 9.3
+- (void)showAlertView;
 @end
 
 @interface SBFolderIcon
@@ -60,6 +61,7 @@ static int badgeValue;
 static BOOL openApp;
 static BOOL isEnabled;
 static BOOL swipeMenu;
+static int direction;
 static BOOL disableSpot;
 
 static UIWindow * window = nil;
@@ -91,6 +93,28 @@ static void clearSheet() {
     // Disable Edting Mode
     if ([[%c(SBIconController) sharedInstance] isEditing]) return;
     
+    NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
+    
+    direction = [dict objectForKey:@"direction"] ? [[dict objectForKey:@"direction"] intValue] : 0;
+    
+    UITouch *touch = arg2;
+    
+    SBIconView *iconView = [%c(SBIconView) alloc];
+    UIView *view = MSHookIvar<UIView *>(iconView,"_currentImageView");
+    
+    CGPoint location = [touch locationInView:view];
+    CGPoint prevLocation = [touch previousLocationInView:view];
+    
+    if (location.y - prevLocation.y > 0 && location.x - prevLocation.x == 0 && direction == 1) {
+        [self showAlertView];
+    } else if (location.y - prevLocation.y < 0 && location.x - prevLocation.x == 0 && direction == 0) {
+        [self showAlertView];
+    }
+}
+
+%new
+- (void)showAlertView
+{
     NSMutableArray *array = [@[identifier] mutableCopy];
     
     NSString *str = [array componentsJoinedByString:@";"];
@@ -195,7 +219,7 @@ static void clearSheet() {
                     }
                     
                     [vc presentViewController:sheet animated:YES completion:^{
-                    
+                        
                         double delayInSeconds = 0.8;
                         dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
                         dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
@@ -359,11 +383,10 @@ static void clearSheet() {
         [[[[%c(SBIconViewMap) homescreenMap] iconModel] applicationIconForBundleIdentifier:idStr] setBadge:nil];
     } else { // iOS 9.3
         SBIconController *iconCtrl = [%c(SBIconController) sharedInstance];
-        if (1) {
-            SBIconModel *iconModel = (SBIconModel *)[[iconCtrl homescreenIconViewMap] iconModel];
-            SBIcon *icon = (SBIcon *)[iconModel applicationIconForBundleIdentifier:idStr];
-            [icon setBadge:nil];
-        }
+        
+        SBIconModel *iconModel = (SBIconModel *)[[iconCtrl homescreenIconViewMap] iconModel];
+        SBIcon *icon = (SBIcon *)[iconModel applicationIconForBundleIdentifier:idStr];
+        [icon setBadge:nil];
     }
     
     [window release];
@@ -410,11 +433,10 @@ static void clearSheet() {
                     [[[[%c(SBIconViewMap) homescreenMap] iconModel] applicationIconForBundleIdentifier:idStr] setBadge:nil];
                 } else { // iOS 9.3
                     SBIconController *iconCtrl = [%c(SBIconController) sharedInstance];
-                    if (1) {
-                        SBIconModel *iconModel = (SBIconModel *)[[iconCtrl homescreenIconViewMap] iconModel];
-                        SBIcon *icon = (SBIcon *)[iconModel applicationIconForBundleIdentifier:idStr];
-                        [icon setBadge:nil];
-                    }
+                    
+                    SBIconModel *iconModel = (SBIconModel *)[[iconCtrl homescreenIconViewMap] iconModel];
+                    SBIcon *icon = (SBIcon *)[iconModel applicationIconForBundleIdentifier:idStr];
+                    [icon setBadge:nil];
                 }
                 
                 [[%c(SBFolderIcon) alloc] _updateBadgeValue];
@@ -452,6 +474,28 @@ static void clearSheet() {
     // Disable Edting Mode
     if ([[%c(SBIconController) sharedInstance] isEditing]) return;
     
+    NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
+    
+    direction = [dict objectForKey:@"direction"] ? [[dict objectForKey:@"direction"] intValue] : 0;
+    
+    UITouch *touch = arg2;
+    
+    SBIconView *iconView = [%c(SBIconView) alloc];
+    UIView *view = MSHookIvar<UIView *>(iconView,"_currentImageView");
+    
+    CGPoint location = [touch locationInView:view];
+    CGPoint prevLocation = [touch previousLocationInView:view];
+    
+    if (location.y - prevLocation.y > 0 && location.x - prevLocation.x == 0 && direction == 1) {
+        [self showAlertView];
+    } else if (location.y - prevLocation.y < 0 && location.x - prevLocation.x == 0 && direction == 0) {
+        [self showAlertView];
+    }
+}
+
+%new
+- (void)showAlertView
+{
     NSMutableArray *array = [@[identifier] mutableCopy];
     
     NSString *str = [array componentsJoinedByString:@";"];
@@ -783,6 +827,15 @@ static void clearSheet() {
 //}
 //%end
 
+static void LoadSettings()
+{
+    NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:PREF_PATH];
+    
+    isEnabled = [dict objectForKey:@"enabled"] ? [[dict objectForKey:@"enabled"] boolValue] : YES;
+    swipeMenu = [dict objectForKey:@"swipeMenu"] ? [[dict objectForKey:@"swipeMenu"] boolValue] : YES;
+    direction = [dict objectForKey:@"direction"] ? [[dict objectForKey:@"direction"] intValue] : 0;
+    disableSpot = [dict objectForKey:@"disableSpot"] ? [[dict objectForKey:@"disableSpot"] boolValue] : NO;
+}
 
 // Called by the flipswitch toggle
 //==============================================================================
@@ -810,6 +863,13 @@ void switchToggleOff() {
     @autoreleasepool {
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
                                         NULL,
+                                        (CFNotificationCallback)LoadSettings,
+                                        CFSTR("com.ichitaso.badgecleaner.preferencechanged"),
+                                        NULL,
+                                        CFNotificationSuspensionBehaviorDeliverImmediately);
+        
+        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
+                                        NULL,
                                         (CFNotificationCallback)switchToggleOn,
                                         CFSTR("com.ichitaso.badgecleaner-switchOn"),
                                         NULL,
@@ -835,5 +895,7 @@ void switchToggleOff() {
         } else {
             %init(iOS8);
         }
+        
+        LoadSettings();
     }
 }

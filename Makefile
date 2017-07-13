@@ -1,7 +1,7 @@
 GO_EASY_ON_ME := 1
 ARCHS = armv7 arm64
 PACKAGE_VERSION = $(THEOS_PACKAGE_BASE_VERSION)
-THEOS_DEVICE_IP = 192.168.0.11
+THEOS_DEVICE_IP = 192.168.0.19
 
 TWEAK_NAME = BadgeCleaner
 BadgeCleaner_FILES = Tweak.xm BDCController.m
@@ -33,11 +33,10 @@ after-install::
 	install.exec "killall -9 SpringBoard"
 	make clean
 	sudo rm -rf ./*.zip
-	sudo mv _ $(THEOS_PACKAGE_NAME)_$(THEOS_PACKAGE_BASE_VERSION)_iphoneos-arm
-	sudo rm -rf ./_
-	zip -r $(THEOS_PACKAGE_NAME)_$(THEOS_PACKAGE_BASE_VERSION)_iphoneos-arm.zip ./$(THEOS_PACKAGE_NAME)_$(THEOS_PACKAGE_BASE_VERSION)_iphoneos-arm
-	sudo rm -rf ./$(THEOS_PACKAGE_NAME)_$(THEOS_PACKAGE_BASE_VERSION)_iphoneos-arm
+	sudo mv .theos/_ $(THEOS_PACKAGE_NAME)_$(THEOS_PACKAGE_BASE_VERSION)_iphoneos-arm
+	sudo rm -rf .theos/_
+	zip -r .theos/$(THEOS_PACKAGE_NAME)_$(THEOS_PACKAGE_BASE_VERSION)_iphoneos-arm.zip $(THEOS_PACKAGE_NAME)_$(THEOS_PACKAGE_BASE_VERSION)_iphoneos-arm
+	mv .theos/$(THEOS_PACKAGE_NAME)_$(THEOS_PACKAGE_BASE_VERSION)_iphoneos-arm.zip ./
+	sudo rm -rf $(THEOS_PACKAGE_NAME)_$(THEOS_PACKAGE_BASE_VERSION)_iphoneos-arm
 	rm -rf .obj
 	rm -rf obj
-#	rm -rf .theos
-#	rm -rf *.deb

@@ -9,8 +9,11 @@
  */
 
 #import <UIKit/UIKit.h>
-#import <Preferences/Preferences.h>
+#import <Preferences/PSControlTableCell.h>
 #import <Preferences/PSListController.h>
+#import <firmware.h>
+
+static int alertCount = 0;
 
 @interface BDCPreferenceController : PSListController <UIActionSheetDelegate>
 - (NSArray *)specifiers;
@@ -64,18 +67,20 @@ void reloadPrefsCallBack() {
 }
 
 void addRespringButtonCallBack () {
+    alertCount++;
     [[NSNotificationCenter defaultCenter] postNotificationName:@"AddRespringButton" object:nil];
 }
 
 - (void)addRespringButton:(NSNotification *)notification
 {
-    UIAlertView *alert =
-    [[UIAlertView alloc] initWithTitle:@"Respring Required"
-                               message:nil
-                              delegate:self
-                     cancelButtonTitle:@"Later"
-                     otherButtonTitles:@"Respring",nil];
-    [alert show];
+    if (alertCount == 1 && kCFCoreFoundationVersionNumber < kCFCoreFoundationVersionNumber_iOS_9_0) {
+        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Respring Required"
+                                                        message:nil
+                                                       delegate:self
+                                              cancelButtonTitle:@"Later"
+                                              otherButtonTitles:@"Respring",nil];
+        [alert show];
+    }
 }
 
 - (void)respring {
@@ -84,6 +89,8 @@ void addRespringButtonCallBack () {
 
 - (void)alertView:(UIAlertView*)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
 {
+    alertCount = 0;
+    
     if (buttonIndex == 1) {
         [self respring];
     }
@@ -97,16 +104,12 @@ void addRespringButtonCallBack () {
     return _specifiers;
 }
 
-- (void)openTwitter:(id)specifier
+- (void)openTwitter:(id)sender
 {
     NSMutableArray *items = [NSMutableArray array];
     
-    if ([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"tweetbot://"]]) {
+    if ([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"tweetbot:"]]) {
         [items addObject:@"Open in Tweetbot"];
-    }
-    
-    if ([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"twitter://"]]) {
-        [items addObject:@"Open in Twitter"];
     }
     
     if ([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"theworld:"]]) {
@@ -117,8 +120,12 @@ void addRespringButtonCallBack () {
         [items addObject:@"Open in TweetLogix"];
     }
     
-	[items addObject:@"Open in Safari"];
-	
+    if ([[UIApplication sharedApplication] canOpenURL:[NSURL URLWithString:@"twitter:"]]) {
+        [items addObject:@"Open in Twitter"];
+    }
+    
+    [items addObject:@"Open in Safari"];
+    
     UIActionSheet *sheet = [[UIActionSheet alloc] initWithTitle:@"Follow @ichitaso"
                                                        delegate:self
                                               cancelButtonTitle:nil
@@ -128,8 +135,10 @@ void addRespringButtonCallBack () {
     for (NSString *buttonTitle in items) {
         [sheet addButtonWithTitle:buttonTitle];
     }
+    
     sheet.cancelButtonIndex = [sheet addButtonWithTitle:@"Cancel"];
-    [sheet showInView:[UIApplication sharedApplication].keyWindow];
+    [sheet showInView:self.view];
+    
     [sheet release];
 }
 

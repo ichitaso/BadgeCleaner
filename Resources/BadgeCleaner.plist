@@ -28,7 +28,7 @@
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>footerText</key>
-			<string>Run by the icon swipe</string>
+			<string>Run by the icon swipe. If it is off, execute with the icon tap.</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -41,12 +41,38 @@
 			<string>swipeMenu</string>
 			<key>label</key>
 			<string>Icon Swipe</string>
+			<key>PostNotification</key>
+			<string>com.ichitaso.badgecleaner.preferencechanged</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSegmentCell</string>
+			<key>validValues</key>
+			<array>
+				<integer>0</integer>
+				<integer>1</integer>
+			</array>
+			<key>validTitles</key>
+			<array>
+				<string>Up</string>
+				<string>Down</string>
+			</array>
+			<key>default</key>
+			<integer>0</integer>
+			<key>defaults</key>
+			<string>com.ichitaso.badgecleaner</string>
+			<key>key</key>
+			<string>direction</string>
+			<key>alignment</key>
+			<string>3</string>
+			<key>PostNotification</key>
+			<string>com.ichitaso.badgecleaner.preferencechanged</string>
 		</dict>
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>footerText</key>
-			<string>In the case of iOS 9, the spotlight of the home screen left is valid.</string>
+			<string>In the case of iOS 9 or higher, the spotlight of the home screen left is valid.</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -66,7 +92,7 @@
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>footerText</key>
-			<string>It hides the badge of the selected application.</string>
+			<string>It hides the badge of the selected application. You need to display the App switcher.</string>
 		</dict>
 		<dict>
 			<key>ALAllowsSelection</key>
